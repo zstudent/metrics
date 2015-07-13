@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Metrics {
 
-	private static final int QUEUE_CAPACITY = 2;
 	public static final int MAX_PAIRS = 1000;
 
 	public static void main(final String[] args) {
@@ -37,67 +36,11 @@ public class Metrics {
 
 		final AtomicLong total = new AtomicLong(0);
 
-		// Iterator<Record> it = data.iterator();
-		//
-		// while (it.hasNext()) {
-		// Record record = it.next();
-		//
-		// ///
-		// }
+		final ExecutorService service = Executors.newCachedThreadPool();
 
-		final ExecutorService service = Executors.newFixedThreadPool(4);
-
-		final BlockingQueue<List<Object[]>> queue = new LinkedBlockingQueue<List<Object[]>>(
-				QUEUE_CAPACITY);
-		
 		final Semaphore sem = new Semaphore(6);
 
 		List<Object[]> pairs = new ArrayList<>(MAX_PAIRS);
-
-		service.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				while (true) {
-
-					try {
-						final List<Object[]> tmpPairs = queue.take();
-						
-						sem.acquire();
-						
-						service.submit(new Runnable() {
-
-							@Override
-							public void run() {
-
-								int sum = 0;
-
-//								try {
-//									Thread.sleep(8000);
-//								} catch (InterruptedException e) {
-//									e.printStackTrace();
-//								}
-
-								for (Object[] objects : tmpPairs) {
-									Record rec = (Record) objects[0];
-									Reference ref = (Reference) objects[1];
-									sum += process(rec, ref);
-								}
-
-								total.addAndGet(sum); // CAS compare and swap
-								
-								sem.release();
-							}
-						});
-
-					} catch (InterruptedException e1) {
-						e1.printStackTrace();
-					}
-				}
-			}
-		});
-
-		int pairsCount = 0;
 
 		for (final Record record : data) {
 			final Reference ref = sequence.getRef(record);
@@ -108,17 +51,33 @@ public class Metrics {
 				continue;
 			}
 
-			pairsCount++;
-
-//			System.out.println("lists: " + pairsCount);
-
 			try {
-				queue.put(pairs);
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
+				sem.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 
+			final List<Object[]> tmpPairs = pairs;
 			pairs = new ArrayList<>(MAX_PAIRS);
+			
+			service.submit(new Runnable() {
+
+				@Override
+				public void run() {
+
+					int sum = 0;
+
+					for (Object[] objects : tmpPairs) {
+						Record rec = (Record) objects[0];
+						Reference ref = (Reference) objects[1];
+						sum += process(rec, ref);
+					}
+
+					total.addAndGet(sum); // CAS compare and swap
+					
+					sem.release();
+				}
+			});
 
 		}
 
