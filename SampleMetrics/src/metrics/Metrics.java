@@ -1,5 +1,8 @@
 package metrics;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class Metrics {
 	
 	
@@ -16,6 +19,8 @@ public class Metrics {
 		Data data = new Data();
 		ReferenceSequence sequence = new ReferenceSequence();
 		
+		Instant start = Instant.now();
+		
 		long total = 0;
 		
 		for (Record record : data) {
@@ -27,7 +32,10 @@ public class Metrics {
 			
 		}
 		
+		Instant stop = Instant.now();
+		
 		System.out.println(total);
+		System.out.println(Duration.between(start, stop));
 		
 	}
 
