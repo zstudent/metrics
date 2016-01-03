@@ -5,6 +5,7 @@ import java.util.Random;
 
 public class Data implements Iterable<Record> {
 	
+	private static final int WORK_TIME = 50;
 	public static final int MAX = 50;
 	public static final int READ_SIZE = 1000;
 	private static final Random random = new Random();
@@ -48,12 +49,12 @@ public class Data implements Iterable<Record> {
 	}
 
 	public char[] create() {
-		pause(100);
+		pause(WORK_TIME);
 		return new char[READ_SIZE];
 	}
 
 	public void prepare(char[] data) {
-		pause(100);
+		pause(WORK_TIME);
 		for (int i = 0; i < data.length; i++) {
 			data[i] = LETTERS[random.nextInt(LETTERS.length)]; 
 		}
