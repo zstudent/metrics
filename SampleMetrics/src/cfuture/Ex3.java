@@ -28,8 +28,6 @@ public class Ex3 {
 		
 		System.out.println(processor.getDone());
 		
-		Thread.sleep(20000);
-
 	}
 
 }

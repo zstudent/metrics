@@ -12,10 +12,10 @@ import java.util.function.Supplier;
 
 public class Parallizer<T> {
 
-	private CompletableFuture<?> last = null;
-	private CompletableFuture<Void> stopFuture = new CompletableFuture<Void>();
+	private CompletableFuture<?> last;
+	private CompletableFuture<Void> stopFuture;
 	private Lock lock = new ReentrantLock();
-	private AtomicBoolean finished = new AtomicBoolean(false);
+	private AtomicBoolean finished = new AtomicBoolean(true);
 	private ExecutorService service;
 	private int parallelism;
 
@@ -25,6 +25,8 @@ public class Parallizer<T> {
 
 	public void process(Supplier<T> supplier, List<Function<T, T>> functions,
 			Function<Throwable, ? extends T> errorHandler) {
+		
+		init();
 
 		service = new ForkJoinPool(parallelism);
 
@@ -35,7 +37,17 @@ public class Parallizer<T> {
 		last.join();
 
 		service.shutdown();
+		
+		service = null;
+	}
 
+	private void init() {
+		if (!finished.weakCompareAndSet(true, false)) {
+			throw new IllegalStateException("This parallizer is already processing some task");
+		}
+		System.out.println("init");
+		last = null;
+		stopFuture = new CompletableFuture<Void>();
 	}
 
 	private void cycle(Supplier<T> supplier, List<Function<T, T>> functions,
