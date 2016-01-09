@@ -1,5 +1,7 @@
 package cfuture;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,27 +12,24 @@ public class Ex0 {
 
 	public static void main(String[] args) {
 
-		Reader reader = new Reader(1);
+		Reader reader = new Reader(0);
 		Unpacker unpacker = new Unpacker(0);
 		Preparator preparator = new Preparator(0);
 		Processor processor = new Processor(0);
 
 		AtomicBoolean finished = new AtomicBoolean(false);
 
-//		Semaphore sem = new Semaphore(100);
-
 		last = null;
+		
+		Instant start = Instant.now();
 
 		while (!finished.get()) {
-
-//			sem.acquireUninterruptibly();
 
 			CompletableFuture<Void> cycleFuture = CompletableFuture.runAsync(() -> {
 
 				CompletableFuture<String> f1 = CompletableFuture
 						.supplyAsync(() -> {
 							String s = reader.get();
-//							System.out.println(">>" + s);
 							if (s == "") {
 								finished.set(true);
 							}
@@ -42,7 +41,6 @@ public class Ex0 {
 						return s;
 					}
 					String r = unpacker.apply(s);
-//					System.out.println(r);
 					return r;
 				});
 
@@ -51,7 +49,6 @@ public class Ex0 {
 						return s;
 					}
 					String r = preparator.apply(s);
-//					System.out.println(r);
 					return r;
 				});
 
@@ -60,19 +57,11 @@ public class Ex0 {
 						return null;
 					}
 					processor.accept(s);
-//					sem.release();
 					return s;
 				});
 
 				if (last != null) {
-					last = finalFuture.thenAcceptBoth(last, (s, u) -> {
-//						Instant now = Instant.now();
-//						try {
-////							System.out.println("finished " + finalFuture.get() + " at " + now.toString());
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
-					});
+					last = CompletableFuture.allOf(finalFuture);
 				} else {
 					last = finalFuture;
 				}
@@ -84,6 +73,12 @@ public class Ex0 {
 		}
 
 		last.join();
+		
+		Instant stop = Instant.now();
+
+		Duration elapsed = Duration.between(start, stop);
+		
+		System.out.println("Elapsed " + elapsed);
 		
 		try {
 			System.out.println("LAST value: " + last.get());
