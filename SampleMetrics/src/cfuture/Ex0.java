@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Ex0 {
 
 	private static CompletableFuture<?> last;
+	private static CompletableFuture<Void> stopFuture;
 
 	public static void main(String[] args) {
 
@@ -21,65 +22,22 @@ public class Ex0 {
 
 		last = null;
 		
+		stopFuture = new CompletableFuture<Void>();
+
 		Instant start = Instant.now();
 
-		while (!finished.get()) {
-
-			CompletableFuture<Void> cycleFuture = CompletableFuture.runAsync(() -> {
-
-				CompletableFuture<String> f1 = CompletableFuture
-						.supplyAsync(() -> {
-							String s = reader.get();
-							if (s == "") {
-								finished.set(true);
-							}
-							return s;
-						});
-
-				CompletableFuture<String> f2 = f1.thenApplyAsync(s -> {
-					if (s == null) {
-						return s;
-					}
-					String r = unpacker.apply(s);
-					return r;
-				});
-
-				CompletableFuture<String> f3 = f2.thenApplyAsync(s -> {
-					if (s == null) {
-						return s;
-					}
-					String r = preparator.apply(s);
-					return r;
-				});
-
-				CompletableFuture<String> finalFuture = f3.thenApplyAsync(s -> {
-					if (s == null) {
-						return null;
-					}
-					processor.accept(s);
-					return s;
-				});
-
-				if (last != null) {
-					last = CompletableFuture.allOf(finalFuture);
-				} else {
-					last = finalFuture;
-				}
-
-			});
-			
-			cycleFuture.join();
-
-		}
+		cycle(reader, unpacker, preparator, processor, finished);
+		
+		stopFuture.join();
 
 		last.join();
-		
+
 		Instant stop = Instant.now();
 
 		Duration elapsed = Duration.between(start, stop);
-		
+
 		System.out.println("Elapsed " + elapsed);
-		
+
 		try {
 			System.out.println("LAST value: " + last.get());
 		} catch (InterruptedException | ExecutionException e) {
@@ -88,6 +46,63 @@ public class Ex0 {
 
 		System.out.println(processor.getDone());
 
+	}
+
+	private static void cycle(Reader reader, Unpacker unpacker,
+			Preparator preparator, Processor processor, AtomicBoolean finished) {
+		CompletableFuture<Void> cycleFuture = CompletableFuture
+				.runAsync(() -> {
+
+					CompletableFuture<String> f1 = CompletableFuture
+							.supplyAsync(() -> {
+								String s = reader.get();
+								if (s == "") {
+									finished.set(true);
+								}
+								return s;
+							});
+
+					CompletableFuture<String> f2 = f1.thenApplyAsync(s -> {
+						if (s == null) {
+							return s;
+						}
+						String r = unpacker.apply(s);
+						return r;
+					});
+
+					CompletableFuture<String> f3 = f2.thenApplyAsync(s -> {
+						if (s == null) {
+							return s;
+						}
+						String r = preparator.apply(s);
+						return r;
+					});
+
+					CompletableFuture<String> finalFuture = f3
+							.thenApplyAsync(s -> {
+								if (s == null) {
+									return null;
+								}
+								processor.accept(s);
+								return s;
+							});
+
+					if (last != null) {
+						last = CompletableFuture.allOf(finalFuture);
+					} else {
+						last = finalFuture;
+					}
+
+				});
+
+		cycleFuture.join();
+
+		if (!finished.get()) {
+			CompletableFuture.runAsync(() -> cycle(reader, unpacker,
+					preparator, processor, finished));
+		} else {
+			stopFuture.complete(null);
+		}
 	}
 
 }
