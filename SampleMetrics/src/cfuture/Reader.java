@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 
 class Reader implements Supplier<String> {
 
-	private static final int DATA_SIZE = 1_000_000;
+	private static final int DATA_SIZE = 10_000;
 	int pause;
 	volatile boolean eod = false;
 
@@ -21,18 +21,18 @@ class Reader implements Supplier<String> {
 
 	@Override
 	public String get() {
-			if (eod) {
-				return null;
-			}
-			int value = count.incrementAndGet();
-			String r = value <= DATA_SIZE ? new String(new byte[1000]) + value
-					: null;
-			if (r == null) {
-				eod = true;
-				return "";
-			}
-			Utils.pause(pause);
-			return r;
+		if (eod) {
+			return null;
 		}
+		int value = count.incrementAndGet();
+		String r = value <= DATA_SIZE ? new String(new byte[1000]) + value
+				: null;
+		if (r == null) {
+			eod = true;
+		} else {
+			Utils.pause(pause);
+		}
+		return r;
+	}
 
 }

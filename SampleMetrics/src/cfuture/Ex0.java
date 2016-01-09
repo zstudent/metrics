@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -15,18 +16,20 @@ public class Ex0 {
 	private static CompletableFuture<?> last;
 	private static CompletableFuture<Void> stopFuture;
 	private static Lock lock = new ReentrantLock();
-	private static ExecutorService service;
 
 	public static void main(String[] args) {
 
-		Reader reader = new Reader();
-		Unpacker unpacker = new Unpacker();
-		Preparator preparator = new Preparator();
-		Processor processor = new Processor();
+		Reader reader = new Reader(1);
+		Unpacker unpacker = new Unpacker(1);
+		Preparator preparator = new Preparator(1);
+		Processor processor = new Processor(1);
 
 		AtomicBoolean finished = new AtomicBoolean(false);
 
-		service = new ForkJoinPool(4);
+		
+		ExecutorService service = new ForkJoinPool(6);
+		
+//		service = Executors.newSingleThreadExecutor();
 
 		last = null;
 
@@ -34,7 +37,7 @@ public class Ex0 {
 
 		Instant start = Instant.now();
 
-		cycle(reader, unpacker, preparator, processor, finished);
+		cycle(service, reader, unpacker, preparator, processor, finished);
 
 		stopFuture.join();
 
@@ -54,7 +57,7 @@ public class Ex0 {
 
 	}
 
-	private static void cycle(Reader reader, Unpacker unpacker,
+	private static void cycle(ExecutorService service, Reader reader, Unpacker unpacker,
 			Preparator preparator, Processor processor, AtomicBoolean finished) {
 		CompletableFuture<Void> cycleFuture = CompletableFuture.runAsync(
 				() -> {
@@ -78,11 +81,7 @@ public class Ex0 {
 							.thenApply(processor);
 
 					if (last != null) {
-						last = f1.thenAcceptBoth(last, (s, u) -> {
-							// if (s == "") {
-							// finished.set(true);
-							// }
-							});
+						last = CompletableFuture.allOf(f1, last);
 					} else {
 						last = f1;
 					}
@@ -93,7 +92,7 @@ public class Ex0 {
 
 		if (!finished.get()) {
 			CompletableFuture.runAsync(
-					() -> cycle(reader, unpacker, preparator, processor,
+					() -> cycle(service, reader, unpacker, preparator, processor,
 							finished), service);
 		} else {
 			stopFuture.complete(null);
