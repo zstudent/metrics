@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class Ex3 {
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		
 		Parallizer<String> p = new Parallizer<String>(5);
 		
@@ -17,7 +17,7 @@ public class Ex3 {
 
 		Instant start = Instant.now();
 		
-		p.start(reader, Arrays.asList(unpacker, preparator, processor), t-> {
+		p.process(reader, Arrays.asList(unpacker, preparator, processor), t-> {
 			System.out.println(t);
 			return "";
 		});
@@ -27,6 +27,8 @@ public class Ex3 {
 		System.out.println("Elapsed " + Duration.between(start, stop));
 		
 		System.out.println(processor.getDone());
+		
+		Thread.sleep(20000);
 
 	}
 
