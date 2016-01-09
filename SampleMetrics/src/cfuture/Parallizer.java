@@ -23,11 +23,11 @@ public class Parallizer<T> {
 		this.parallelism = parallelism;
 	}
 
-	public void start(Supplier<T> supplier, List<Function<T,T>> functions) {
+	public void start(Supplier<T> supplier, List<Function<T,T>> functions, Function<Throwable, ? extends T> errorHandler) {
 		
 		service = new ForkJoinPool(parallelism);
 		
-		cycle(supplier, functions);
+		cycle(supplier, functions, errorHandler);
 		
 		stopFuture.join();
 		
@@ -35,7 +35,7 @@ public class Parallizer<T> {
 
 	}
 
-	private void cycle(Supplier<T> supplier, List<Function<T, T>> functions) {
+	private void cycle(Supplier<T> supplier, List<Function<T, T>> functions, Function<Throwable, ? extends T> errorHandler) {
 		CompletableFuture<Void> cycleFuture = CompletableFuture.runAsync(
 				() -> {
 
@@ -57,7 +57,10 @@ public class Parallizer<T> {
 							});
 					
 					for (Function<T, T> function : functions) {
-						f1.thenApply(function);
+						f1 = f1.thenApply(function).exceptionally(t -> {
+							System.err.println(t);
+							return null;
+						});
 					}
 
 					if (last != null) {
@@ -72,7 +75,7 @@ public class Parallizer<T> {
 
 		if (!finished.get()) {
 			CompletableFuture.runAsync(
-					() -> cycle(supplier, functions), service);
+					() -> cycle(supplier, functions, errorHandler), service);
 		} else {
 			stopFuture.complete(null);
 		}

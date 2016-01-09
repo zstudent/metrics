@@ -19,6 +19,9 @@ class Unpacker implements Function<String, String> {
 		if (read == null || read.isEmpty()) {
 			return read;
 		}
+		if (Math.random() >= 0.999) {
+			throw new RuntimeException("SUDDEN BUG");
+		}
 		Utils.pause(pause);
 		return read + read;
 	}

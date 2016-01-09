@@ -17,7 +17,10 @@ public class Ex3 {
 
 		Instant start = Instant.now();
 		
-		p.start(reader, Arrays.asList(unpacker, preparator, processor));
+		p.start(reader, Arrays.asList(unpacker, preparator, processor), t-> {
+			System.out.println(t);
+			return "";
+		});
 		
 		Instant stop = Instant.now();
 		
