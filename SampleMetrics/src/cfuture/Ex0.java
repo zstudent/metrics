@@ -4,9 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -27,7 +25,7 @@ public class Ex0 {
 		Processor processor = new Processor();
 
 		AtomicBoolean finished = new AtomicBoolean(false);
-		
+
 		service = new ForkJoinPool(4);
 
 		last = null;
@@ -44,9 +42,7 @@ public class Ex0 {
 
 		Instant stop = Instant.now();
 
-		Duration elapsed = Duration.between(start, stop);
-
-		System.out.println("Elapsed " + elapsed);
+		System.out.println("Elapsed " + Duration.between(start, stop));
 
 		try {
 			System.out.println("LAST value: " + last.get());
@@ -60,28 +56,33 @@ public class Ex0 {
 
 	private static void cycle(Reader reader, Unpacker unpacker,
 			Preparator preparator, Processor processor, AtomicBoolean finished) {
-		CompletableFuture<Void> cycleFuture = CompletableFuture
-				.runAsync(() -> {
+		CompletableFuture<Void> cycleFuture = CompletableFuture.runAsync(
+				() -> {
 
 					CompletableFuture<String> f1 = CompletableFuture
 							.supplyAsync(() -> {
 								lock.lock();
 								try {
-									return reader.get();
+									String s = reader.get();
+									if (s == "") {
+										throw new RuntimeException("EOD");
+									}
+									return s;
 								} finally {
 									lock.unlock();
 								}
-							}, service)
-							.thenApply(unpacker)
-							.thenApply(preparator)
+							}, service).exceptionally(t -> {
+								finished.set(true);
+								return "";
+							}).thenApply(unpacker).thenApply(preparator)
 							.thenApply(processor);
 
 					if (last != null) {
 						last = f1.thenAcceptBoth(last, (s, u) -> {
-							if (s == "") {
-								finished.set(true);
-							}
-						});
+							// if (s == "") {
+							// finished.set(true);
+							// }
+							});
 					} else {
 						last = f1;
 					}
@@ -91,8 +92,9 @@ public class Ex0 {
 		cycleFuture.join();
 
 		if (!finished.get()) {
-			CompletableFuture.runAsync(() -> cycle(reader, unpacker,
-					preparator, processor, finished), service);
+			CompletableFuture.runAsync(
+					() -> cycle(reader, unpacker, preparator, processor,
+							finished), service);
 		} else {
 			stopFuture.complete(null);
 		}
