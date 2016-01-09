@@ -5,11 +5,14 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Ex0 {
 
 	private static CompletableFuture<?> last;
 	private static CompletableFuture<Void> stopFuture;
+	private static Lock lock = new ReentrantLock();
 
 	public static void main(String[] args) {
 
@@ -54,8 +57,14 @@ public class Ex0 {
 				.runAsync(() -> {
 
 					CompletableFuture<String> f1 = CompletableFuture
-							.supplyAsync(reader::get)
-							.thenApplyAsync(unpacker::apply)
+							.supplyAsync(() -> {
+								lock.lock();
+								try {
+									return reader.get();
+								} finally {
+									lock.unlock();
+								}
+							}).thenApplyAsync(unpacker::apply)
 							.thenApplyAsync(preparator::apply)
 							.thenApplyAsync(processor::apply);
 

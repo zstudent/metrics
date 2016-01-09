@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 
 class Reader implements Supplier<String> {
 
-	private static final int DATA_SIZE = 10_000_000;
+	private static final int DATA_SIZE = 1_000_000;
 	int pause;
 	volatile boolean eod = false;
 
@@ -21,7 +21,6 @@ class Reader implements Supplier<String> {
 
 	@Override
 	public String get() {
-		synchronized (count) {
 			if (eod) {
 				return null;
 			}
@@ -35,6 +34,5 @@ class Reader implements Supplier<String> {
 			Utils.pause(pause);
 			return r;
 		}
-	}
 
 }

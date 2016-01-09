@@ -29,7 +29,7 @@ class Processor implements Function<String, String> {
 //		System.out.println("done");
 		if (t != null && !t.isEmpty()) {
 			int count = done.incrementAndGet();
-			if (count % 1_000 == 0) {
+			if (count % 100_000 == 0) {
 				System.out.println(count);
 			}
 		}
