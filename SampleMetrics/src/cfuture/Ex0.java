@@ -13,21 +13,21 @@ public class Ex0 {
 
 	public static void main(String[] args) {
 
-		Reader reader = new Reader(0);
-		Unpacker unpacker = new Unpacker(0);
-		Preparator preparator = new Preparator(0);
-		Processor processor = new Processor(0);
+		Reader reader = new Reader();
+		Unpacker unpacker = new Unpacker();
+		Preparator preparator = new Preparator();
+		Processor processor = new Processor();
 
 		AtomicBoolean finished = new AtomicBoolean(false);
 
 		last = null;
-		
+
 		stopFuture = new CompletableFuture<Void>();
 
 		Instant start = Instant.now();
 
 		cycle(reader, unpacker, preparator, processor, finished);
-		
+
 		stopFuture.join();
 
 		last.join();
@@ -54,43 +54,19 @@ public class Ex0 {
 				.runAsync(() -> {
 
 					CompletableFuture<String> f1 = CompletableFuture
-							.supplyAsync(() -> {
-								String s = reader.get();
-								if (s == "") {
-									finished.set(true);
-								}
-								return s;
-							});
-
-					CompletableFuture<String> f2 = f1.thenApplyAsync(s -> {
-						if (s == null) {
-							return s;
-						}
-						String r = unpacker.apply(s);
-						return r;
-					});
-
-					CompletableFuture<String> f3 = f2.thenApplyAsync(s -> {
-						if (s == null) {
-							return s;
-						}
-						String r = preparator.apply(s);
-						return r;
-					});
-
-					CompletableFuture<String> finalFuture = f3
-							.thenApplyAsync(s -> {
-								if (s == null) {
-									return null;
-								}
-								processor.accept(s);
-								return s;
-							});
+							.supplyAsync(reader::get)
+							.thenApplyAsync(unpacker::apply)
+							.thenApplyAsync(preparator::apply)
+							.thenApplyAsync(processor::apply);
 
 					if (last != null) {
-						last = CompletableFuture.allOf(finalFuture);
+						last = f1.thenAcceptBoth(last, (s, u) -> {
+							if (s == "") {
+								finished.set(true);
+							}
+						});
 					} else {
-						last = finalFuture;
+						last = f1;
 					}
 
 				});

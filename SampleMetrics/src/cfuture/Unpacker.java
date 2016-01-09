@@ -16,6 +16,9 @@ class Unpacker implements Function<String, String> {
 
 	@Override
 	public String apply(String read) {
+		if (read == null || read.isEmpty()) {
+			return read;
+		}
 		Utils.pause(pause);
 		return read + read;
 	}

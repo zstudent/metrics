@@ -1,9 +1,9 @@
 package cfuture;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
-class Processor implements Consumer<String> {
+class Processor implements Function<String, String> {
 	
 	private int pause;
 	private AtomicInteger done = new AtomicInteger();
@@ -16,20 +16,24 @@ class Processor implements Consumer<String> {
 		pause = pauseMillis;
 	}
 
+	public int getDone() {
+		return done.get();
+	}
+
 	@Override
-	public void accept(String t) {
+	public String apply(String t) {
+		if (t == null || t.isEmpty()) {
+			return t;
+		}
 		Utils.pause(pause);
 //		System.out.println("done");
 		if (t != null && !t.isEmpty()) {
 			int count = done.incrementAndGet();
-			if (count % 1_000_000 == 0) {
+			if (count % 1_000 == 0) {
 				System.out.println(count);
 			}
 		}
-	}
-
-	public int getDone() {
-		return done.get();
+		return t;
 	}
 	
 }
