@@ -4,6 +4,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,6 +17,7 @@ public class Ex0 {
 	private static CompletableFuture<?> last;
 	private static CompletableFuture<Void> stopFuture;
 	private static Lock lock = new ReentrantLock();
+	private static ExecutorService service;
 
 	public static void main(String[] args) {
 
@@ -22,6 +27,8 @@ public class Ex0 {
 		Processor processor = new Processor();
 
 		AtomicBoolean finished = new AtomicBoolean(false);
+		
+		service = new ForkJoinPool(4);
 
 		last = null;
 
@@ -64,9 +71,10 @@ public class Ex0 {
 								} finally {
 									lock.unlock();
 								}
-							}).thenApplyAsync(unpacker::apply)
-							.thenApplyAsync(preparator::apply)
-							.thenApplyAsync(processor::apply);
+							}, service)
+							.thenApply(unpacker)
+							.thenApply(preparator)
+							.thenApply(processor);
 
 					if (last != null) {
 						last = f1.thenAcceptBoth(last, (s, u) -> {
@@ -78,13 +86,13 @@ public class Ex0 {
 						last = f1;
 					}
 
-				});
+				}, service);
 
 		cycleFuture.join();
 
 		if (!finished.get()) {
 			CompletableFuture.runAsync(() -> cycle(reader, unpacker,
-					preparator, processor, finished));
+					preparator, processor, finished), service);
 		} else {
 			stopFuture.complete(null);
 		}
