@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 class Processor implements Function<String, String> {
-	
+
 	private int pause;
 	private AtomicInteger done = new AtomicInteger();
 
@@ -25,15 +25,13 @@ class Processor implements Function<String, String> {
 		if (t == null || t.isEmpty()) {
 			return t;
 		}
-		Utils.pause(pause);
-//		System.out.println("done");
-		if (t != null && !t.isEmpty()) {
-			int count = done.incrementAndGet();
-			if (count % 1_000 == 0) {
-				System.out.println(count);
-			}
+		// System.out.println("done");
+		int count = done.incrementAndGet();
+		if (count % 1_000 == 0) {
+			System.out.println(count);
 		}
+		Utils.pause(pause);
 		return t;
 	}
-	
+
 }
