@@ -26,11 +26,11 @@ class Processor implements Function<String, String> {
 			return t;
 		}
 		// System.out.println("done");
-		int count = done.incrementAndGet();
-		if (count % 1_000 == 0) {
-			System.out.println(count);
-		}
-		Utils.pause(pause);
+//		int count = done.incrementAndGet();
+//		if (count % 10_000 == 0) {
+//			System.out.println(count);
+//		}
+//		Utils.pause(pause);
 		return t;
 	}
 

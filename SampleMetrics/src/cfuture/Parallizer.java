@@ -3,16 +3,19 @@ package cfuture;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Parallizer<T> {
 
-	private CompletableFuture<?> last;
+	private CompletableFuture<Void> last;
 	private CompletableFuture<Void> stopFuture;
 	private Lock lock = new ReentrantLock();
 	private AtomicBoolean finished = new AtomicBoolean(true);
@@ -29,29 +32,26 @@ public class Parallizer<T> {
 					"This parallizer is already processing some task");
 		}
 		System.out.println("init");
-		last = null;
+		last = CompletableFuture.completedFuture(null);
 		stopFuture = new CompletableFuture<Void>();
 	}
 
-	public void process(Supplier<T> supplier, List<Function<T, T>> functions,
+	public void process(Supplier<T> supplier, List<Function<T, T>> functions, Runnable finish,
 			Function<Throwable, ? extends T> errorHandler) {
 
 		init();
 
-		service = new ForkJoinPool(parallelism);
-
-		cycle(supplier, functions, errorHandler);
-
-		stopFuture.join();
-
-		last.join();
-
-		service.shutdown();
-
-		service = null;
+		service = Executors.newFixedThreadPool(parallelism);
+		
+		cycle(supplier, functions, (v) -> {
+			System.out.println("stop");
+			service.shutdown();
+			service = null;
+			finish.run();
+		}, errorHandler);
 	}
-
-	private void cycle(Supplier<T> supplier, List<Function<T, T>> functions,
+	
+	private void cycle(Supplier<T> supplier, List<Function<T, T>> functions, Consumer<? super Void> finishingAction,
 			Function<Throwable, ? extends T> errorHandler) {
 		CompletableFuture<T> f1 = CompletableFuture.supplyAsync(() -> {
 			lock.lock();
@@ -76,19 +76,14 @@ public class Parallizer<T> {
 			});
 		}
 
-		if (last != null) {
 			last = CompletableFuture.allOf(f1, last);
-		} else {
-			last = f1;
-		}
-
-		// cycleFuture.join();
 
 		if (finished.get()) {
+			last.thenAccept(finishingAction);
 			stopFuture.complete(null);
 		} else {
 			CompletableFuture.runAsync(
-					() -> cycle(supplier, functions, errorHandler), service);
+					() -> cycle(supplier, functions, finishingAction, errorHandler), service);
 		}
 	}
 }

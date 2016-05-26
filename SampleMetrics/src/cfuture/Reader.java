@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 
 class Reader implements Supplier<String> {
 
-	private static final int DATA_SIZE = 10_000;
+	private static final int DATA_SIZE = 2_000_000;
 	int pause;
 	volatile boolean eod = false;
 
