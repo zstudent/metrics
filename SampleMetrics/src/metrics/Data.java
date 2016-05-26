@@ -5,7 +5,7 @@ import java.util.Random;
 
 public class Data implements Iterable<Record> {
 	
-	public static final int MAX = 1_000_000;
+	public static final int MAX = 10_000_000;
 	public static final int READ_SIZE = 1000;
 	private static final Random random = new Random();
 	
@@ -27,17 +27,12 @@ public class Data implements Iterable<Record> {
 			public Record next() {
 				count++;
 				char[] data = new char[READ_SIZE];
-				for (int i = 0; i < data.length; i++) {
-					data[i] = LETTERS[random.nextInt(LETTERS.length)]; 
+				for (int i = 1; i <= data.length; i++) {
+					data[i-1] = 1; 
 				}
 				return new Record(data);
 			}
 
-			@Override
-			public void remove() {
-				// TODO Auto-generated method stub
-				
-			}
 		};
 	}
 

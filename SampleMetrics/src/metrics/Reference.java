@@ -2,10 +2,10 @@ package metrics;
 
 public class Reference {
 
-	final char[] read;
+	final char[] chromosome;
 
 	public Reference(final char[] read) {
-		this.read = read;
+		this.chromosome = read;
 	}
 
 }
