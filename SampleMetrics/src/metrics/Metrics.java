@@ -1,5 +1,8 @@
 package metrics;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class Metrics {
 	
 	
@@ -7,7 +10,13 @@ public class Metrics {
 		
 		Metrics metrics = new Metrics();
 		
+		Instant start = Instant.now();
 		metrics.doWork();
+		Instant stop = Instant.now();
+		
+		Duration d = Duration.between(start, stop);
+		
+		System.out.println("Elapsed: " + d.toMillis());
 		
 	}
 

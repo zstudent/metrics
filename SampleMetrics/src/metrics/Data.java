@@ -5,8 +5,8 @@ import java.util.Random;
 
 public class Data implements Iterable<Record> {
 	
-	public static final int MAX = 1000000;
-	public static final int READ_SIZE = 300;
+	public static final int MAX = 1_000_000;
+	public static final int READ_SIZE = 1000;
 	private static final Random random = new Random();
 	
 	
