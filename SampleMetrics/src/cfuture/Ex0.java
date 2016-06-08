@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Ex0 {
 
-	private static CompletableFuture<?> last;
+	private static CompletableFuture<?> previous;
 	private static CompletableFuture<Void> stopFuture;
 	private static Lock lock = new ReentrantLock();
 
@@ -31,7 +31,7 @@ public class Ex0 {
 		
 //		service = Executors.newSingleThreadExecutor();
 
-		last = null;
+		previous = null;
 
 		stopFuture = new CompletableFuture<Void>();
 
@@ -41,14 +41,14 @@ public class Ex0 {
 
 		stopFuture.join();
 
-		last.join();
+		previous.join();
 
 		Instant stop = Instant.now();
 
 		System.out.println("Elapsed " + Duration.between(start, stop));
 
 		try {
-			System.out.println("LAST value: " + last.get());
+			System.out.println("LAST value: " + previous.get());
 		} catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
 		}
@@ -62,7 +62,7 @@ public class Ex0 {
 		CompletableFuture<Void> cycleFuture = CompletableFuture.runAsync(
 				() -> {
 
-					CompletableFuture<String> f1 = CompletableFuture
+					CompletableFuture<String> current = CompletableFuture
 							.supplyAsync(() -> {
 								lock.lock();
 								try {
@@ -80,10 +80,10 @@ public class Ex0 {
 							}).thenApply(unpacker).thenApply(preparator)
 							.thenApply(processor);
 
-					if (last != null) {
-						last = CompletableFuture.allOf(f1, last);
+					if (previous != null) {
+						previous = CompletableFuture.allOf(current, previous);
 					} else {
-						last = f1;
+						previous = current;
 					}
 
 				}, service);
