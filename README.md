@@ -12,3 +12,10 @@ https://drive.google.com/folderview?id=0B29M3sfdctitSmprS1lFNnR6UUE&usp=sharing
 
 NCBI test data:
 http://www.ncbi.nlm.nih.gov/tools/gbench/tutorial6/
+
+Picard Tools:
+http://broadinstitute.github.io/picard/
+https://github.com/broadinstitute/picard
+
+HTSJDK:
+https://github.com/samtools/htsjdk
