@@ -19,3 +19,8 @@ https://github.com/broadinstitute/picard
 
 HTSJDK:
 https://github.com/samtools/htsjdk
+
+
+Средний файл "экзом" ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12878/exome_alignment/NA12878.mapped.ILLUMINA.bwa.CEU.exome.20121211.bam размером 16 876 961 Kbytes (около 17 Гигабайт)
+
+Маленький файл 19 хромосома ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/pilot2_high_cov_GRCh37_bams/data/NA12878/alignment/NA12878.chrom19.ILLUMINA.bwa.CEU.high_coverage.20100311.bam  размером 6,3 Гбайт
