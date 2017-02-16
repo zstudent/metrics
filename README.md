@@ -1,5 +1,15 @@
 # metrics
 
+
+Steps:
+
+1. Java 8 SE  JDK  http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+2. Eclipse.org
+3. terminal:   git clone https://github.com/broadinstitute/picard
+4. Eclipse:  Import Project -> Gradle -> <chose folder from file system>
+
+
+
 Video:
 
 https://drive.google.com/open?id=0B29M3sfdctitfktPOVluYjZfSEpzOUotWjY3M0ZGMDlRd2VySUo5RE5GSkptelpPWnhqcHc
